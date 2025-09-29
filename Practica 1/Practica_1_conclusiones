@@ -1,0 +1,17 @@
+Cosas a tener en cuenta:
+  -Se programa en Python
+  -No se puede usar sleep
+  -No se puede usar HAL.getPose3d().x ni HAL.getPose3d().y
+
+Resumen código final, introducción máquina de estados:
+
+Estados:
+
+  avanzar y laser: Avanzar a velocidad constante mientras miramos los angulos, cuando se detecte un obstaculo cercano con 
+  los angulos front_values = laser_data.values[60:120], cuando lo detectamos pasamos al estado ver angulos laterales.
+
+  ver angulos laterales: Aquí vemos con right_values = laser_data.values[0:60] y left_values = laser_data.values[120:180], 
+  entonces vemos los objetos mas cercanos a estos angulos, y giramos para evitar el que este mas cerca, o en el caso de que
+  solo se detecte uno se gira para evitar ese
+
+  girar: simplemente gira hasta evitar el obsataculo.
