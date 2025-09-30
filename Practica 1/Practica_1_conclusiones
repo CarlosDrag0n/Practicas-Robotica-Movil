@@ -1,8 +1,14 @@
-Mi idea principal era hacer una máquina de estados con dos estados básicos para el robot. El primer estado consistiría en avanzar, y el segundo en girar de forma aleatoria. Todo esto respetando las limitaciones: no usar sleep, no usar HAL.getPose3d(), y programar en Python.
+Mi idea principal era hacer una máquina de estados con dos estados básicos para el robot. 
+El primer estado consistiría en avanzar, y el segundo en girar de forma aleatoria. 
+Todo esto respetando las limitaciones: no usar sleep, no usar HAL.getPose3d(), y programar en Python.
 
-Empecé abordando el estado de avance. Este estado tiene una lógica simple: avanzar de forma lineal y constante siempre que el láser no detecte un objeto a una distancia de 0.5 m. Aquí surgió un problema: detectaba todos los objetos alrededor, incluso los que no suponían un choque. Para solucionarlo, reduje el ángulo de detección, haciendo que se centrara en los objetos frontales más cercanos. Una vez detectado el obstáculo, se pasa al estado de giro, no sin antes calcular el tiempo que queremos que gire y en qué dirección.
+Empecé abordando el estado de avance. Este estado tiene una lógica simple: avanzar de forma lineal y constante 
+siempre que el láser no detecte un objeto a una distancia de 0.5 m. Aquí surgió un problema: detectaba todos los objetos alrededor, 
+incluso los que no suponían un choque. Para solucionarlo, reduje el ángulo de detección, haciendo que se centrara en los objetos frontales más cercanos. 
+Una vez detectado el obstáculo, se pasa al estado de giro, no sin antes calcular el tiempo que queremos que gire y en qué dirección.
 
-En el estado de giro, el robot simplemente gira a velocidad constante durante un tiempo aleatorio y, cuando se cumple ese tiempo, vuelve al estado de avance, repitiendo el ciclo.
+En el estado de giro, el robot simplemente gira a velocidad constante durante un tiempo 
+aleatorio y, cuando se cumple ese tiempo, vuelve al estado de avance, repitiendo el ciclo.
 
 También he definido ciertos umbrales tanto para la velocidad máxima como para la velocidad de giro.
 
