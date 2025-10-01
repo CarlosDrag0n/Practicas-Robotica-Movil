@@ -1,19 +1,27 @@
-Mi idea principal era hacer una máquina de estados con dos estados básicos para el robot: avanzar y girar de forma aleatoria, respetando las limitaciones de no usar sleep, no usar HAL.getPose3d(), y programando en Python.
+Mi idea principal era hacer una máquina de estados con dos estados básicos para el robot: avanzar y girar de forma aleatoria, 
+respetando las limitaciones de no usar sleep, no usar HAL.getPose3d(), y programando en Python.
 
 Estado de avance
 
-Este estado tiene una lógica simple: el robot avanza de forma lineal y constante mientras el láser no detecte un objeto a una distancia menor a 0.5 m. Inicialmente surgió un problema: el robot detectaba todos los objetos alrededor, incluso los que no suponían un choque. Para solucionarlo, se redujo el ángulo de detección, centrando la atención solo en los objetos frontales más cercanos.
+Este estado tiene una lógica simple: el robot avanza de forma lineal y constante mientras el láser no detecte un objeto a una distancia menor a 0.5 m. 
+Inicialmente surgió un problema: el robot detectaba todos los objetos alrededor, incluso los que no suponían un choque. 
+Para solucionarlo, se redujo el ángulo de detección, centrando la atención solo en los objetos frontales más cercanos.
 
-Si se detecta un obstáculo frontal o si el bumper indica que el robot ha chocado, se pasa al estado de retroceso. Antes de pasar al giro, se calcula el tiempo que queremos que el robot gire y en qué dirección.
+Si se detecta un obstáculo frontal o si el bumper indica que el robot ha chocado, se pasa al estado de retroceso. 
+Antes de pasar al giro, se calcula el tiempo que queremos que el robot gire y en qué dirección.
 
 Estado de retroceso
 
-El retroceso se introdujo para garantizar que el robot se aleje del obstáculo antes de girar. En este estado, el robot se mueve hacia atrás a una velocidad constante durante un tiempo aleatorio, lo que evita que vuelva a chocar inmediatamente con el mismo obstáculo. Una vez cumplido este tiempo, se pasa al estado de giro.
+El retroceso se introdujo para garantizar que el robot se aleje del obstáculo antes de girar. 
+En este estado, el robot se mueve hacia atrás a una velocidad constante durante un tiempo aleatorio, 
+lo que evita que vuelva a chocar inmediatamente con el mismo obstáculo. Una vez cumplido este tiempo, se pasa al estado de giro.
 
 Estado de giro
 
-En este estado, el robot gira a velocidad constante en la dirección calculada previamente durante un tiempo aleatorio. Cuando se cumple el tiempo de giro, se vuelve al estado de avance, repitiendo el ciclo.
+En este estado, el robot gira a velocidad constante en la dirección calculada previamente durante un tiempo aleatorio. 
+Cuando se cumple el tiempo de giro, se vuelve al estado de avance, repitiendo el ciclo.
 
 Umbrales y velocidades
 
-Se han definido umbrales para la distancia mínima de detección, la velocidad máxima de avance, la velocidad de giro y la velocidad de retroceso, garantizando un comportamiento seguro y fluido del robot.
+Se han definido umbrales para la distancia mínima de detección, la velocidad máxima de avance, la velocidad de giro y la velocidad de retroceso,
+garantizando un comportamiento seguro y fluido del robot.
