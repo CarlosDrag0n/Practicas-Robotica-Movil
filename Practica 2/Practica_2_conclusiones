@@ -1,45 +1,56 @@
-Mi idea principal desde el inicio era implementar un control PID para que el robot pudiera seguir una línea roja en el suelo. Sin embargo, no comencé directamente con el PID completo, sino que fui avanzando paso a paso, resolviendo problemas en cada versión del código hasta llegar a una solución robusta.
+Mi idea principal desde el inicio era implementar un control PID para que el robot pudiera seguir una línea roja en el suelo. 
+Sin embargo, no comencé directamente con el PID completo, sino que fui avanzando paso a paso, 
+resolviendo problemas en cada versión del código hasta llegar a una solución robusta.
+
 
 Primer código: control proporcional básico
 
-En el primer intento solo implementé un control proporcional. La lógica era sencilla: calculaba el centro de la línea roja y ajustaba la velocidad angular en función del error respecto al centro de la cámara.
+En el primer intento solo implementé un control proporcional. 
+La lógica era sencilla: calculaba el centro de la línea roja y ajustaba la velocidad angular en función del error respecto al centro de la cámara.
 El robot lograba seguir la línea, pero tenía dos problemas claros:
 
 En curvas cerradas, giraba demasiado lento y se salía.
-
 En rectas, la velocidad era constante y no se aprovechaba el hecho de que podía ir más rápido.
 
-Este código me permitió sentar la base, pero necesitaba más adaptabilidad.
 
 Segundo código: control lineal agregado
 
 Decidí entonces que la velocidad lineal también debía adaptarse al error.
 Implementé un control donde la velocidad máxima se usaba en rectas, y en curvas el robot reducía la velocidad según cuánto error angular tuviera.
 
-Con esto conseguí un comportamiento más estable: en curvas ya no se salía tan fácilmente y en rectas era más rápido. Sin embargo, todavía no quedaba claro qué parte de la imagen estaba usando realmente el robot para tomar decisiones, lo que dificultaba depurar errores.
+Con esto conseguí un comportamiento más estable: en curvas ya no se salía tan fácilmente y en rectas era más rápido. 
+Sin embargo, todavía no quedaba claro qué parte de la imagen estaba usando realmente el robot para tomar decisiones, lo que dificultaba depurar errores.
+
 
 Tercer código: zona de interés (ROI) y visualización
 
-Para entender mejor lo que el robot “veía”, añadí una región de interés (ROI) en la imagen, resaltándola visualmente. También dibujé el centro de la cámara y el punto detectado de la línea.
+Para entender mejor lo que el robot “veía”, añadí una región de interés (ROI) en la imagen, resaltándola visualmente. 
+También dibujé el centro de la cámara y el punto detectado de la línea.
 
-Esto me ayudó a comprobar que, en ocasiones, el robot tomaba referencias muy cercanas al coche, lo que producía movimientos bruscos. Además, descubrí que el control proporcional no era suficiente: en rectas largas, el error podía acumularse y el robot tardaba en corregirlo.
+Esto me ayudó a comprobar que, en ocasiones, el robot tomaba referencias muy cercanas al coche, lo que producía movimientos bruscos. 
+Además, descubrí que el control proporcional no era suficiente: en rectas largas, el error podía acumularse y el robot tardaba en corregirlo.
+
 
 Cuarto código: búsqueda de la línea más lejana
 
-Decidí entonces que el robot debía buscar la parte más lejana de la línea roja visible, ya que esta daba más información sobre el futuro del camino. Implementé un método con np.argmax para localizar la fila más alta con color rojo.
+Decidí entonces que el robot debía buscar la parte más lejana de la línea roja visible, ya que esta daba más información sobre el futuro del camino. 
+Implementé un método con np.argmax para localizar la fila más alta con color rojo.
 
 Esto mejoró mucho la anticipación del coche, aunque aparecieron nuevos problemas:
 
 Si por un instante desaparecía la línea (por sombras o ruido), el robot se detenía bruscamente.
-
 Todavía el control era solo proporcional, con lo que seguían existiendo oscilaciones en tramos complicados.
+
 
 Quinto código: usar el último centro conocido
 
 Para resolver las pérdidas momentáneas de la línea, introduje la idea de recordar el último centro detectado.
 Así, si un frame no encontraba línea, el robot usaba la referencia anterior para seguir girando.
 
-Esto hizo que el robot fuese más robusto y no se detuviera tan fácilmente. Sin embargo, el control proporcional seguía siendo limitado: al acumular errores, se producían giros bruscos o sobrecorrecciones. Ya era momento de implementar el PID.
+Esto hizo que el robot fuese más robusto y no se detuviera tan fácilmente. Sin embargo, 
+el control proporcional seguía siendo limitado: al acumular errores, se producían giros bruscos o sobrecorrecciones.
+Para corregir esto implemente el PID.
+
 
 Sexto código: primer PID completo
 
@@ -51,27 +62,31 @@ Integral (Ki): acumulaba pequeños errores sostenidos.
 
 Derivativo (Kd): suavizaba los giros bruscos anticipando cambios.
 
-Con el PID, el robot comenzó a girar de manera más natural y con menos oscilaciones. Además, ajusté la velocidad lineal para que dependiera del error, lo que dio un avance más fluido.
+Con el PID, el robot comenzó a girar de manera más natural y con menos oscilaciones. 
+Además, ajusté la velocidad lineal para que dependiera del error, lo que dio un avance más fluido.
 El problema en esta etapa fue que el robot no siempre detectaba bien la línea roja si cambiaba de tono, lo que lo hacía vulnerable a distintas iluminaciones.
+
 
 Séptimo código: detección de rojos brillantes y oscuros
 
-Para mejorar la robustez de la detección, añadí máscaras para dos tipos de rojo: brillante y oscuro. De esta forma, el robot podía seguir la línea aunque variaran las condiciones de luz.
+Para mejorar la robustez de la detección, añadí máscaras para dos tipos de rojo: brillante y oscuro. 
+De esta forma, el robot podía seguir la línea aunque variaran las condiciones de luz.
 
-El resultado fue mucho más confiable. El robot ya lograba mantenerse en la trayectoria durante más tiempo sin perder la referencia. Sin embargo, todavía quedaba un último detalle: ¿qué hacer cuando la línea desaparece completamente?
+El resultado fue mucho más confiable. El robot ya lograba mantenerse en la trayectoria durante más tiempo sin perder la referencia. 
+Y para terminar de hacerlo robusto me quedaba implementar lo que tenía que hacer cuando dejara de detectar la línea.
+
 
 Último código: robustez ante pérdida de línea
 
-Finalmente implementé una lógica extra: si la línea desaparece por completo, el robot gira en la última dirección en la que la vio hasta volver a encontrarla. Esto evita que se quede detenido o que gire sin sentido.
+Finalmente implementé una lógica extra: si la línea desaparece por completo, el robot gira en la última dirección en la que la vio hasta volver a encontrarla. 
+Esto evita que se quede detenido o que gire sin sentido.
+
 
 De esta forma, conseguí un robot que:
 
 Detecta diferentes tonos de rojo.
-
 Sigue la línea de forma suave con un PID ajustado.
-
 Ajusta su velocidad según el error.
-
 Es robusto ante pérdidas momentáneas de la línea.
 
-Con cada versión del código fui resolviendo problemas concretos hasta alcanzar un controlador PID estable y robusto. Lo que comenzó como un control proporcional muy básico evolucionó a un sistema completo y confiable para el seguimiento de líneas.
+Con cada versión del código fui resolviendo problemas concretos hasta alcanzar un controlador PID estable y robusto. 
