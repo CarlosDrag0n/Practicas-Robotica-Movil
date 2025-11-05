@@ -49,8 +49,10 @@ Implementé dos sistemas de control independientes:
 
 Control Angular (VFF): La velocidad angular w pasó a depender únicamente de la suma de las fuerzas laterales (steering_force = T_y + O_y). Su único trabajo es decidir la dirección (esquivar y buscar).
 
-Control Lineal (PID): La velocidad lineal v se asignó a un PID independiente, cuyo único trabajo es mantener una distancia de seguridad (ej. PID_SETPOINT_DIST = 1.5m) con lo que tenga delante. Si el camino está libre, va a MAX_LINEAR_SPEED; si algo se acerca, frena.
+Control Lineal (PID): La velocidad lineal v se asignó a un PID independiente, 
+cuyo único trabajo es mantener una distancia de seguridad (ej. PID_SETPOINT_DIST = 1.5m) con lo que tenga delante. Si el camino está libre, va a MAX_LINEAR_SPEED; si algo se acerca, frena.
 
 Este desacoplamiento fue el salto cualitativo. El módulo de giro (VFF) se concentra en la dirección, mientras que el módulo de velocidad (PID) actúa como un control adaptativo de seguridad.
 
-De esta forma, y tras corregir varios errores conceptuales (coordenadas y lógica del PID), conseguí un robot que calcula todas las fuerzas en su marco relativo, usa VFF para un control de giro desacoplado y un PID de seguridad para controlar la velocidad lineal.
+De esta forma, y tras corregir varios errores conceptuales (coordenadas y lógica del PID), 
+conseguí un robot que calcula todas las fuerzas en su marco relativo, usa VFF para un control de giro desacoplado y un PID de seguridad para controlar la velocidad lineal.
