@@ -1,115 +1,56 @@
-Mi idea principal desde el inicio era implementar un sistema de navegación robusto, basado en Campos de Potencial Virtual (VFF), 
-que permitiera al robot seguir un objetivo (target) y, al mismo tiempo, evitar activamente los obstáculos detectados por el láser.
+Mi objetivo principal desde el inicio fue implementar un sistema de navegación robusto basado en Campos de Potencial Virtual (VFF), 
+capaz de seguir un objetivo y evitar obstáculos activamente. El desarrollo fue un proceso iterativo, superando varios errores conceptuales.
 
-1. Primer código: "Saber qué me da el láser"
-En el primer intento, mi único objetivo era entender los datos del sensor. 
-Antes de poder evitar obstáculos, necesitaba "verlos" de una forma que pudiera usar para hacer cálculos.
+Fase 1: Interpretación del Sensor y Primer Prototipo
+El primer paso fue puramente instrumental: entender los datos del sensor láser. Antes de evitar obstáculos, necesitaba "verlos". 
+La primera versión del código se centró en una función parse_laser_data que no solo leía los 180 valores, 
+sino que los convertía de distancias y ángulos a coordenadas X/Y relativas al robot. Esto fue fundamental para cualquier cálculo posterior.
 
-Implementé una función parse_laser_data que leía los 180 valores del láser. La mejora clave fue que no solo los leía, 
-sino que los convertía de distancias y ángulos a coordenadas X/Y relativas al robot. 
-En esta etapa no había control, solo un print, pero me dio la base fundamental para saber qué "veía" el robot y cómo podría empezar a calcular fuerzas.
+Con esta base, implementé la lógica básica de VFF: una función para el vector de atracción al objetivo y otra para el vector de repulsión de los obstáculos. 
+Aquí surgió el primer gran problema conceptual: mezclaba sistemas de coordenadas.
 
-2. Segundo código: "Intento vector total"
-Decidí entonces implementar la lógica básica de Campos de Potencial (VFF). 
-Añadí dos funciones principales: obtener_vector_objetivo para calcular la "atracción" y compute_repulsion_vector para calcular la "repulsión" de las paredes.
+El vector de atracción se calculaba en coordenadas absolutas (posición del robot y del objetivo en el mundo).
 
-Con esto conseguí un primer prototipo, pero apareció el primer gran problema conceptual:
+El vector de repulsión se calculaba en coordenadas relativas (basado en los (x, y) del láser).
 
-Calculaba el vector de atracción en coordenadas absolutas (la posición del robot y del objetivo en el mundo).
+Al intentar sumar estos dos vectores, el resultado era matemáticamente incorrecto y no tenía sentido físico. 
+El control, además, solo usaba la repulsión, por lo que el robot se limitaba a huir de las paredes, ignorando el objetivo. 
+Aunque en una iteración posterior (tercer código) usé numpy y visualicé las fuerzas, esto solo sirvió para confirmar gráficamente el error de base.
 
-Calculaba el vector de repulsión en coordenadas relativas (basado en los (x, y) del láser, que son relativos al robot).
+Fase 2: Corrección de Coordenadas y Errores de Control
+La solución (cuarto código) fue realizar todos los cálculos en el marco de referencia relativo al robot. 
+La mejora clave fue en obtener_vector_objetivo, donde usé la orientación del robot (el yaw) para rotar el vector de atracción absoluto y convertirlo en uno relativo.
 
-Al intentar sumar estos dos vectores (total = [atractivo[0] + repulsion[0]...]), 
-el resultado era matemáticamente incorrecto y no tenía sentido físico. Además, el control de V y W lo basé solo en la repulsión, 
-por lo que el robot se limitaba a huir de las paredes, ignorando por completo el objetivo.
-
-3. Tercer código: "Vectores bien implementados"
-En esta versión intenté limpiar el código y usar numpy para gestionar los vectores (total = atractivo + repulsion), 
-pensando que quizás el problema era la suma. También añadí la visualización WebGUI.showForces.
-
-La visualización fue muy útil, pero solo sirvió para confirmar el problema anterior: 
-seguía sumando vectores de sistemas de coordenadas distintos. 
-El robot seguía sin poder navegar hacia el objetivo, pero ahora podía "ver" gráficamente por qué el vector total era incorrecto.
-
-4. Cuarto código: "Versión medio 'funcional'"
-Decidí que todos los cálculos debían hacerse en el marco de referencia relativo al robot.
-
-La gran mejora fue en obtener_vector_objetivo. 
-Ahora, obtenía la orientación del robot (robot_orientation = HAL.getPose3d().yaw)
-y la usaba para rotar el vector de atracción absoluto y convertirlo en uno relativo (x_rel, y_rel).
-
-Ahora sí, tanto el vector de atracción como el de repulsión estaban en el mismo sistema. 
-La suma ponderada (total = atractivo * 0.8 + repulsion * 0.2) por fin tenía sentido. 
-Sin embargo, el control seguía fallando: calculaba un total correcto, 
-pero seguía controlando la velocidad angular w usando solo la componente lateral de la repulsión (repulsion[1]). 
+Ahora sí, tanto la atracción como la repulsión estaban en el mismo sistema y la suma ponderada total = atractivo * 0.8 + repulsion * 0.2 era coherente. 
+Sin embargo, el control seguía fallando. Aunque el vector total era correcto, la velocidad angular w se seguía basando solo en la componente lateral de la repulsión. 
 El robot esquivaba, pero ignoraba la dirección del vector total para girar.
 
-5. Quinto código: "Uso de los vectores para hacer el PID"
-Decidí que era hora de usar ese vector total para controlar el giro, e introduje un controlador PID para la velocidad angular w.
+Decidí (quinto código) usar ese vector total para controlar el giro, introduciendo un controlador PID para la velocidad angular w. 
+La lógica era calcular el ángulo deseado (desired_angle = math.atan2(total[1], total[0])) y usar el PID para alcanzarlo.
 
-La lógica era: 
-1) Calcular el vector total relativo. 
-2) Obtener el ángulo deseado de ese vector (desired_angle = math.atan2(total[1], total[0])). 
-3) Usar el PID para que el robot girara hasta alcanzar ese ángulo.
+Esto me llevó a un nuevo error conceptual. El error del PID se calculó como error = desired_angle - robot_angle. Volví a mezclar sistemas: desired_angle es relativo al morro del robot, 
+pero robot_angle (el yaw) es absoluto en el mundo. El control, de nuevo, era incorrecto.
 
-Pero esto me llevó a un nuevo error conceptual. El "error" de mi PID era error = desired_angle - robot_angle. 
-Volví a mezclar sistemas: desired_angle es relativo al morro del robot, pero robot_angle (el yaw) es absoluto en el mundo. El control, de nuevo, era un desastre.
+Fase 3: La Lógica de Control Correcta
+La solución (sexto código) fue comprender que el desired_angle (atan2(total_rel[1], total_rel[0])) no era un objetivo, 
+sino que ya era la señal de error que el robot debía corregir. Un ángulo 0 significaba "recto", un ángulo positivo significaba "gira a la izquierda".
 
-6. Sexto código: "Mejora del uso de vectores"
-Para resolver el lío del PID, me di cuenta de que el "error" no era la resta. 
-El propio desired_angle YA ES EL ERROR que el robot debe corregir. Si el vector total apunta recto (componente [1] es 0), el error es 0. Si apunta a la izquierda (componente [1] positiva), el error es positivo.
+Implementando error = math.atan2(total_rel[1], total_rel[0]) en el PID (o simplemente usándolo proporcionalmente) el sistema funcionó.
+El robot navegaba, esquivaba y, con la gestión de tolerancia, se detenía en el objetivo.
 
-Implementé esto: error = math.atan2(total_rel[1], total_rel[0]). Además, añadí la gestión de objetivos (target_tolerance) para que el robot se detuviera al llegar. 
-çNavegaba, esquivaba y paraba en el objetivo. Sin embargo, el control de velocidad lineal v seguía siendo algo simple 
-(basado en closest_dist) y sentía que el control de v y w estaba demasiado "acoplado".
+Fase 4: Optimización y Arquitectura Híbrida Final
+Aunque funcional, el control de velocidad lineal v y angular w se sentía demasiado "acoplado". 
+Probé (séptimo y octavo código) con enfoques de control proporcional más directos, usando el vector total para definir ambas velocidades e incluso normalizando los vectores. 
+Estos métodos funcionaban, pero eran muy sensibles a los pesos y un obstáculo podía afectar tanto al giro como a la velocidad de avance de forma indeseada.
 
-7. Séptimo código: "Mejoras de velocidad lineal y velocidad angular"
-Decidí probar un enfoque más directo y simple, abandonando el PID de giro que había implementado.
+Esto me llevó al rediseño final (noveno código): una arquitectura híbrida desacoplada, que resultó ser la solución más robusta.
 
-En esta versión, convertía el vector total directamente en velocidades:
+Implementé dos sistemas de control independientes:
 
-La velocidad angular w era simplemente el desired_angle (un control proporcional al error de ángulo).
+Control Angular (VFF): La velocidad angular w pasó a depender únicamente de la suma de las fuerzas laterales (steering_force = T_y + O_y). Su único trabajo es decidir la dirección (esquivar y buscar).
 
-La velocidad lineal v era la componente X (frontal) del vector total (v_raw = total[0]).
+Control Lineal (PID): La velocidad lineal v se asignó a un PID independiente, cuyo único trabajo es mantener una distancia de seguridad (ej. PID_SETPOINT_DIST = 1.5m) con lo que tenga delante. Si el camino está libre, va a MAX_LINEAR_SPEED; si algo se acerca, frena.
 
-Esto tenía un comportamiento interesante: si el robot tenía que girar mucho (un desired_angle alto), el vector total apuntaba hacia un lado, 
-por lo que su componente frontal total[0] se reducía y el robot frenaba para girar. 
-Era más simple que el PID, pero muy dependiente de ajustar bien los pesos alpha y beta.
+Este desacoplamiento fue el salto cualitativo. El módulo de giro (VFF) se concentra en la dirección, mientras que el módulo de velocidad (PID) actúa como un control adaptativo de seguridad.
 
-8. Octavo código: "Intento de estabilizar con normalización"
-Intenté refinar el control proporcional del código 7. 
-Quería que las fuerzas solo dieran dirección, no magnitud, para estabilizar la velocidad.
-
-Para ello, normalicé el vector de atracción (para que solo diera dirección) y luego normalicé el vector total resultante, 
-escalándolo por una ganancia fija (force_gain). El robot intentaba moverse a una velocidad más constante.
-
-Pero este enfoque seguía acoplando fuertemente el giro y el avance. 
-Si un obstáculo generaba una gran fuerza de repulsión, afectaba directamente a la velocidad. Sentí que necesitaba una arquitectura mejor.
-
-9. Noveno código (Final): "Arquitectura híbrida PID-VFF"
-Finalmente, decidí rediseñar la arquitectura por completo para desacoplar el control de giro del control de velocidad. Esta fue la solución más robusta.
-
-Implementé dos sistemas de control independientes que corrían en paralelo:
-
-Control Angular (VFF): La velocidad angular w (target_angular_speed) ahora solo depende de la suma de las fuerzas laterales (steering_force = T_y + O_y). 
-Su único trabajo es decidir hacia dónde girar (combinando objetivo y obstáculos).
-
-Control Lineal (PID): La velocidad lineal v (target_linear_speed) se asignó a un PID independiente. 
-Su único trabajo es mantener una distancia de seguridad (PID_SETPOINT_DIST = 1.5m) con lo que tenga delante. 
-Si el camino está libre, va a MAX_LINEAR_SPEED; si algo se acerca, frena.
-
-Este fue el gran salto. El robot ahora tenía un comportamiento mucho más robusto: 
-el módulo de giro (VFF) se concentra en la dirección, mientras que el módulo de velocidad (PID) actúa como un "control adaptativo".
-
-Conclusión
-De esta forma, y tras corregir varios errores conceptuales (coordenadas, lógica del PID), conseguí un robot que:
-
-Calcula todas las fuerzas de atracción y repulsión en el marco relativo del robot.
-
-Usa el VFF (fuerzas laterales) para un control de giro desacoplado que esquiva y busca el objetivo.
-
-Usa un PID de seguridad para controlar la velocidad lineal y evitar colisiones frontales.
-
-Gestiona la llegada a los objetivos y completa la navegación.
-
-Con cada versión del código fui resolviendo problemas concretos hasta alcanzar un controlador estable y robusto.
+De esta forma, y tras corregir varios errores conceptuales (coordenadas y lógica del PID), conseguí un robot que calcula todas las fuerzas en su marco relativo, usa VFF para un control de giro desacoplado y un PID de seguridad para controlar la velocidad lineal.
