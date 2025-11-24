@@ -8,9 +8,9 @@ Esto me sirvió para entender la estructura de la matriz (los valores de las par
 
 Segundo código: conversión de mundos y distancias.
 
-Decidí entonces conectar el mundo físico (metros en Gazebo) con el mundo digital (píxeles en la matriz). Implementé las fórmulas de conversión de coordenadas y el cálculo de la distancia euclidiana.
+Decidí entonces a conectar el mundo físico (metros en Gazebo) con el mundo digital (píxeles en la matriz). Implementé las fórmulas de conversión de coordenadas y el cálculo de la distancia euclidiana.
 
-Con esto conseguí que el sistema me dijera en tiempo real a cuántos metros estaba el objetivo y en qué celda de la matriz caía. Sin embargo, esta distancia era en línea recta ("a vuelo de pájaro"), lo cual no servía para navegar por un laberinto de calles, ya que ignoraba las paredes.
+Con esto conseguí que el sistema me dijera en tiempo real a cuántos metros estaba el objetivo y en qué celda de la matriz caía. Sin embargo, esta distancia era en línea recta, lo cual no servía para navegar por un laberinto de calles, ya que ignoraba las paredes.
 
 Tercer código: algoritmo Wave Front y visualización.
 
@@ -48,7 +48,7 @@ Esto permitió que el robot "anticipara" las curvas. En lugar de apuntar al vér
 
 Último código: reestructuración y arquitectura.
 
-Finalmente, con toda la lógica funcionando, noté que el código era difícil de leer y mantener. Reestructuré todo el programa utilizando diccionarios de estado (NAV_STATE, PID_STATE) y funciones modulares bien definidas.
+Finalmente, con toda la lógica funcionando, noté que el código era difícil de leer y mantener. Así que reestructuré todo el programa para que fuera más legible.
 
 De esta forma, conseguí un sistema que:
 
@@ -61,6 +61,8 @@ Conduce de forma fluida gracias al PID y al Lookahead.
 Se recupera automáticamente si se sale de la pista.
 
 Con cada versión fui resolviendo desde la comprensión del entorno hasta la optimización fina del control, logrando una navegación autónoma fiable y elegante.
+
+Dejo un vídeo a modo de demostración del programa. 
 
 
 [![Ver vídeo](https://img.youtube.com/vi/S40CsciUvcs/maxresdefault.jpg)](https://youtu.be/fyr2ybg8Zgk)
