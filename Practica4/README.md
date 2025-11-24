@@ -65,4 +65,4 @@ Con cada versión fui resolviendo desde la comprensión del entorno hasta la opt
 Dejo un vídeo a modo de demostración del programa. 
 
 
-[![Ver vídeo](https://img.youtube.com/vi/S40CsciUvcs/maxresdefault.jpg)](https://youtu.be/fyr2ybg8Zgk)
+[![Ver video](https://img.youtube.com/vi/fyr2ybg8Zgk/maxresdefault.jpg)](https://youtu.be/fyr2ybg8Zgk)
