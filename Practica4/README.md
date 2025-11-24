@@ -3,7 +3,7 @@ Mi objetivo principal en este ejercicio de Navegación Global era implementar el
 Primer código: comprensión del mapa y coordenadas
 Aquí mi prioridad fue entender qué estaba "pisando" el robot y cómo traducir eso a código. Cargué la imagen del mapa y creé un script sencillo para inspeccionar los valores de las celdas.
 
-Esto me sirvió para entender la estructura de la matriz (0 para paredes, otros valores para caminos) y validar si el objetivo seleccionado por el ratón caía en una zona válida o prohibida. El problema aquí era evidente: el robot sabía dónde estaba el objetivo, pero no tenía ni idea de cómo llegar ni de la distancia real.
+Esto me sirvió para entender la estructura de la matriz (los valores de las pareeds y los de los caminos) y validar si el objetivo seleccionado por el ratón caía en una zona válida o prohibida. El problema aquí era evidente: el robot sabía dónde estaba el objetivo, pero no tenía ni idea de cómo llegar ni de la distancia real.
 
 Segundo código: conversión de mundos y distancias
 Decidí entonces conectar el mundo físico (metros en Gazebo) con el mundo digital (píxeles en la matriz). Implementé las fórmulas de conversión de coordenadas y el cálculo de la distancia euclidiana.
