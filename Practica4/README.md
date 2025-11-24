@@ -1,7 +1,7 @@
 Mi objetivo principal en este ejercicio de Navegación Global era implementar el algoritmo Wave Front (Gradient Path Planning) para que el robot pudiera navegar de forma autónoma a cualquier punto del mapa. Al igual que en ejercicios anteriores, no busqué la solución final de inmediato, sino que fui construyendo el sistema por capas: desde entender las coordenadas hasta refinar el control del movimiento.
 
 Primer código: comprensión del mapa y coordenadas
-En la primera aproximación, mi prioridad fue entender qué estaba "pisando" el robot y cómo traducir eso a código. Cargué la imagen del mapa y creé un script sencillo para inspeccionar los valores de las celdas.
+Aquí mi prioridad fue entender qué estaba "pisando" el robot y cómo traducir eso a código. Cargué la imagen del mapa y creé un script sencillo para inspeccionar los valores de las celdas.
 
 Esto me sirvió para entender la estructura de la matriz (0 para paredes, otros valores para caminos) y validar si el objetivo seleccionado por el ratón caía en una zona válida o prohibida. El problema aquí era evidente: el robot sabía dónde estaba el objetivo, pero no tenía ni idea de cómo llegar ni de la distancia real.
 
