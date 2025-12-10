@@ -34,4 +34,5 @@ Con cada versión fui resolviendo desde la comprensión del sensor hasta la auto
 Dejo un video con la simulación:
 
 
-[![Ver video](https://img.youtube.com/vi/U9Y1F1qcj1E/maxresdefault.jpg)](https://youtu.be/U9Y1F1qcj1E)
+[![Ver video](https://img.youtube.com/vi/U9Y1F1qcj1E/hqdefault.jpg)](https://youtu.be/U9Y1F1qcj1E)
+
