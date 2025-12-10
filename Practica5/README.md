@@ -1,68 +1,37 @@
-Mi objetivo principal en este ejercicio de Navegación Global era implementar el algoritmo Wave Front (Gradient Path Planning) para que el robot pudiera navegar de forma autónoma a cualquier punto del mapa. Al igual que en ejercicios anteriores, no busqué la solución final de inmediato, sino que fui construyendo el sistema por capas: desde entender las coordenadas hasta refinar el control del movimiento.
+Mi objetivo principal en este ejercicio de Mapeado y Navegación Reactiva era lograr que el robot explorara un entorno desconocido de forma autónoma, construyendo un mapa fiable en tiempo real. Al igual que en ejercicios anteriores, no busqué la solución final de inmediato, sino que fui construyendo el sistema por capas: desde la lectura cruda del sensor hasta una arquitectura robusta de toma de decisiones capaz de escapar de bloqueos.
 
-Primer código: comprensión del mapa y coordenadas.
+Primer código: inspección del sensor láser. Aquí mi prioridad fue entender qué estaba "viendo" el robot. Antes de intentar moverme, necesitaba saber cómo me devolvía la información el sensor LiDAR. Creé un script de introspección para destripar el objeto data y entender su estructura (values, ranges). Esto me sirvió para confirmar que el sensor devolvía distancias en metros y para calibrar cómo filtrar los valores inf (infinitos) o nan (errores) que podían romper los cálculos matemáticos posteriores.
 
-Aquí mi prioridad fue entender qué estaba "pisando" el robot y cómo traducir eso a código. Cargué la imagen del mapa y creé un script sencillo para inspeccionar los valores de las celdas.
+Segundo código: navegación sistemática reactiva. Decidí entonces dar los primeros pasos. Implementé una máquina de estados muy sencilla (FORWARD, TURN) basada en una lógica puramente reactiva: "si ves algo cerca, gira; si no, avanza". El robot se movía, pero era una navegación "ciega". No sabía dónde estaba ni a dónde iba, simplemente rebotaba por el entorno evitando colisiones inmediatas. Además, el giro era arbitrario, lo que a menudo lo dejaba atrapado en bucles simples.
 
-Esto me sirvió para entender la estructura de la matriz (los valores de las pareeds y los de los caminos) y validar si el objetivo seleccionado por el ratón caía en una zona válida o prohibida. El problema aquí era evidente: el robot sabía dónde estaba el objetivo, pero no tenía ni idea de cómo llegar ni de la distancia real.
+Tercer código: mapeado básico y localización. Aquí di el salto a la conciencia espacial. Necesitaba que el robot recordara dónde había estado. Implementé las fórmulas de conversión de coordenadas polares (del láser) a cartesianas (del mundo) y de ahí a la matriz del mapa (píxeles). Con esto conseguí pintar en tiempo real los obstáculos detectados sobre un lienzo negro. Sin embargo, el sistema era computacionalmente pesado y el robot se movía muy despacio, ya que procesaba cada rayo del láser en cada iteración.
 
-Segundo código: conversión de mundos y distancias.
+Cuarto código: optimización y limpieza visual. Me encontré con un problema de rendimiento. Para solucionarlo, optimicé el bucle de lectura del láser, procesando solo uno de cada tres rayos ("skip steps"). También invertí la lógica visual: partí de un lienzo blanco (vacío) para pintar los obstáculos en negro, lo cual era más intuitivo. El robot ahora mapeaba más rápido, pero la navegación seguía siendo tosca: paraba en seco y giraba sobre su eje de forma muy mecánica.
 
-Decidí entonces a conectar el mundo físico (metros en Gazebo) con el mundo digital (píxeles en la matriz). Implementé las fórmulas de conversión de coordenadas y el cálculo de la distancia euclidiana.
+Quinto código: lógica probabilística (Bayes). Introduje un concepto clave: la incertidumbre. Un solo rayo láser puede ser ruido, así que implementé un modelo probabilístico simplificado (Rejilla de Ocupación). En lugar de marcar un obstáculo como "verdad absoluta" (0 o 255), usé una matriz de flotantes (prob_map) inicializada en 0.5 (desconocido). Cada vez que el láser detectaba algo, aumentaba la probabilidad de ocupación (+0.3). Esto permitió generar un mapa mucho más limpio y fiable, filtrando lecturas erróneas esporádicas.
 
-Con esto conseguí que el sistema me dijera en tiempo real a cuántos metros estaba el objetivo y en qué celda de la matriz caía. Sin embargo, esta distancia era en línea recta, lo cual no servía para navegar por un laberinto de calles, ya que ignoraba las paredes.
+Sexto código: cerebro explorador y "Ray Casting". Con el mapa probabilístico funcionando, el problema era la curiosidad: el robot no sabía a dónde ir. Implementé una función cerebro_decidir_giro que contaba la cantidad de píxeles "desconocidos" (gris) a su izquierda y derecha. Además, mejoré el mapeado usando el algoritmo de Bresenham. Ahora, no solo pintaba el obstáculo final, sino que "limpiaba" (bajaba la probabilidad) de todas las celdas entre el robot y el obstáculo, dibujando pasillos libres. El robot empezaba a comportarse de forma inteligente, buscando zonas no exploradas.
 
-Tercer código: algoritmo Wave Front y visualización.
+Séptimo código: navegación dirigida por fronteras. Para suavizar la conducción, sustituí los giros bruscos de 90º por un buscador de ángulos (buscar_mejor_angulo). El robot ahora escanea un abanico de posibilidades frente a él y elige el ángulo que le dirige hacia la mayor concentración de terreno desconocido. Como se ve en la transcripción de la terminal ("Ganador: -44.59º"), el robot ya no reaccionaba al azar, sino que calculaba activamente un target_yaw preciso. Esto permitió trazas mucho más fluidas y una exploración más eficiente.
 
-Aquí di el salto al Path Planning. Implementé el algoritmo de llenado por inundación (BFS), propagando una "ola" desde el objetivo hacia todo el mapa. Para visualizarlo, normalicé los valores de 0 a 255, creando un gradiente donde el negro era la meta y el blanco lo más lejano.
+Octavo código: sistema de puntuación y memoria. Aunque navegaba bien, el robot tendía a volver a zonas que ya había visitado. Para solucionarlo, implementé una memoria de celdas visitadas (visited) con un factor de decaimiento. Creé un sistema de scoring complejo para elegir la ruta: sumaba puntos por ir a lo desconocido, pero restaba muchos puntos si la zona ya había sido visitada o si el camino estaba bloqueado en el mapa probabilístico. Esto obligó al robot a priorizar siempre áreas nuevas y evitar quedarse dando vueltas en círculos en habitaciones ya mapeadas.
 
-En esta etapa también introduje un concepto clave: el margen de seguridad. Me di cuenta de que si el robot pasaba muy cerca de una pared (valor 0), podía chocar. Por eso, "engordé" las paredes artificialmente en la matriz antes de calcular el gradiente.
-
-Cuarto código: primera navegación básica.
-
-Con el mapa de calor generado, tocaba mover el coche. La lógica fue descender por el gradiente: el robot miraba a sus 8 vecinos y se dirigía al que tuviera el valor más bajo (el camino más corto a la meta).
-
-El robot lograba llegar, pero el movimiento era muy tosco ("robotizado"). Al usar velocidades fijas y giros bruscos, el coche avanzaba a trompicones. Además, si el gradiente no era perfecto, se quedaba atascado en mínimos locales o esquinas.
-
-Quinto código: robustez en la selección del objetivo.
-
-Me encontré con un problema de usabilidad: si hacía clic un píxel dentro de una pared, el algoritmo fallaba o no calculaba nada. Para solucionarlo, implementé una función "imán" (encontrar_camino_cercano).
-
-Si el usuario selecciona una pared, el código busca en espiral el píxel de carretera más cercano y reubica el objetivo allí. Esto hizo el sistema mucho más amigable y robusto ante errores humanos, asegurando que siempre hubiera un camino válido que calcular.
-
-Sexto código: implementación del PID y modo escape.
-
-Para suavizar la conducción, sustituí la lógica básica por un controlador PID completo. Ahora, el error no era solo la dirección, sino que el PID ajustaba la velocidad angular (W) basándose en la diferencia de ángulo hacia el siguiente punto.
-
-Aquí surgió un problema crítico: a veces, por inercia, el coche "pisaba" una pared virtual (valor infinito) y el algoritmo se rompía. Para solucionarlo, creé un "Modo Escape": si el coche detecta que está fuera del camino válido, ignora el gradiente normal y busca desesperadamente el valor numérico más cercano para reincorporarse a la carretera.
-
-Séptimo código: anticipación (Lookahead) y centrado.
-
-Aunque el PID mejoró la suavidad, el robot tendía a "comerse" las curvas, girando demasiado tarde. Decidí mejorar dos aspectos:
-
-Paredes más gruesas: Aumenté el RADIO_SEGURIDAD a 3 píxeles. Esto obligó al algoritmo a generar caminos que van más por el centro de la calle, lejos de los bordes.
-
-Lookahead (Zanahoria): Implementé una función que no mira al vecino inmediato, sino 3 pasos por delante en el gradiente.
-
-Esto permitió que el robot "anticipara" las curvas. En lugar de apuntar al vértice de la esquina, apunta a la salida de la curva, logrando trazas mucho más fluidas y rápidas.
-
-Último código: reestructuración y arquitectura.
-
-Finalmente, con toda la lógica funcionando, noté que el código era difícil de leer y mantener. Así que reestructuré todo el programa para que fuera más legible.
+Noveno código: robustez extrema y modos de escape. Finalmente, noté que en situaciones complejas (como esquinas afiladas o "trampas" en U), el robot detectaba un obstáculo pero intentaba corregir su trayectoria con cambios de ángulo tan pequeños que no lograba salir (deriva). Para blindar el sistema, añadí detectores de estancamiento (is_angle_drift_stuck) y un estado de emergencia: STATE_ESCAPE_ROTATE. Si el robot detecta que no avanza o que sus objetivos oscilan sin progreso, deja de "pensar" y entra en un modo reactivo puro: gira sobre sí mismo buscando el hueco libre más grande en el láser para salir del atolladero a toda costa.
 
 De esta forma, conseguí un sistema que:
 
-Es robusto ante clics erróneos (imán).
+Genera mapas probabilísticos limpios usando Bayes y Bresenham.
 
-Genera trayectorias seguras alejadas de las paredes.
+Prioriza la exploración de zonas desconocidas de forma inteligente.
 
-Conduce de forma fluida gracias al PID y al Lookahead.
+Evita bucles infinitos gracias a su memoria de zonas visitadas.
 
-Se recupera automáticamente si se sale de la pista.
+Posee una "consciencia" de fallo que le permite auto-rescatarse si se queda atascado.
 
-Con cada versión fui resolviendo desde la comprensión del entorno hasta la optimización fina del control, logrando una navegación autónoma fiable y elegante.
-
-Dejo un vídeo a modo de demostración del programa. 
+Con cada versión fui resolviendo desde la comprensión del sensor hasta la autonomía total en la toma de decisiones, logrando un explorador robusto y fiable.
 
 
-[![Ver video](https://img.youtube.com/vi/fyr2ybg8Zgk/maxresdefault.jpg)](https://youtu.be/fyr2ybg8Zgk)
+Dejo un video con la simulación:
+
+
+[![Ver video](https://img.youtube.com/vi/U9Y1F1qcj1E/maxresdefault.jpg)](https://youtu.be/U9Y1F1qcj1E)
