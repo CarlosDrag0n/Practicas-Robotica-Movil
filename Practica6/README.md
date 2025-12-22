@@ -68,6 +68,4 @@ El código resultante (`vigesimo codigo`) ofrece:
 
 ## Demo
 
-[Insertar enlace al video aquí]
-
 [![Ver video](https://img.youtube.com/vi/EmlyWCKJOvI/hqdefault.jpg)](https://youtu.be/EmlyWCKJOvI)
