@@ -66,16 +66,6 @@ El código resultante (`vigesimo codigo`) ofrece:
 
 ---
 
-## Dependencias
-
-* `Robotics Academy HAL & WebGUI`
-* `OpenCV (cv2)`
-* `NumPy`
-* `PyAprilTags`
-* `PyYAML`
-
----
-
 ## Demo
 
 [Insertar enlace al video aquí]
